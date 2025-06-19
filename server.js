@@ -323,6 +323,282 @@ app.post('/deals/search', async (req, res) => {
 
 
 
+//             ---------------------COMPANIES ENDPOINTS FROM HERE ->>>>>>>>>>>>>>>>>>>
+
+
+
+
+
+// GET all companies (limit 10, archived = false)
+app.get('/companies', async (req, res) => {
+  const authToken = req.headers.authorization;
+
+  try {
+    const response = await fetch('https://api.hubapi.com/crm/v3/objects/companies?limit=10&archived=false', {
+      method: 'GET',
+      headers: {
+        Authorization: authToken
+      }
+    });
+
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
+  }
+});
+
+
+
+// GET - Company by ID
+app.get('/companies/:id', async (req, res) => {
+  const authToken = req.headers.authorization;
+  const { id } = req.params;
+
+  try {
+    const response = await fetch(`https://api.hubapi.com/crm/v3/objects/companies/${id}`, {
+      method: 'GET',
+      headers: {
+        Authorization: authToken
+      }
+    });
+
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
+  }
+});
+
+
+
+
+
+
+// POST - Create a new company
+app.post('/companies', async (req, res) => {
+  const authToken = req.headers.authorization;
+  const body = req.body;
+
+  try {
+    const response = await fetch('https://api.hubapi.com/crm/v3/objects/companies', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: authToken
+      },
+      body: JSON.stringify(body)
+    });
+
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
+  }
+});
+
+
+
+
+// PATCH - Update Company by ID
+app.patch('/companies/:id', async (req, res) => {
+  const authToken = req.headers.authorization;
+  const { id } = req.params;
+  const body = req.body;
+
+  try {
+    const response = await fetch(`https://api.hubapi.com/crm/v3/objects/companies/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: authToken
+      },
+      body: JSON.stringify(body)
+    });
+
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (err) {
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
+  }
+});
+
+
+app.delete('/companies/:id', async (req, res) => {
+  try {
+    const token = req.headers['authorization'];
+    const { id } = req.params;
+
+    const response = await axios.delete(`https://api.hubapi.com/crm/v3/objects/companies/${id}`, {
+      headers: {
+        Authorization: token
+      }
+    });
+
+    if (response.status === 204) {
+      res.status(204).send(); // No content
+    } else {
+      res.status(response.status).json(response.data);
+    }
+  } catch (err) {
+    res.status(err.response?.status || 500).json({ error: err.message });
+  }
+});
+
+
+
+
+// ---------------------------------Search companies by name ()--------------------
+
+app.post('/companies/search', async (req, res) => {
+  try {
+    const token = req.headers['authorization'];
+    const body = req.body;
+
+    const response = await axios.post(
+      'https://api.hubapi.com/crm/v3/objects/companies/search',
+      body,
+      {
+        headers: {
+          Authorization: token,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    res.status(response.status).json(response.data);
+  } catch (err) {
+    res.status(err.response?.status || 500).json({ error: err.message });
+  }
+});
+
+
+
+
+
+
+
+//--------------------------------------TICKETTS ENDPOINTS FROM HERE ->>>>>>>>>>>>>>>>>>>
+
+
+
+
+
+
+
+const HUBSPOT_TICKET_URL = 'https://api.hubapi.com/crm/v3/objects/tickets';
+
+// GET all tickets
+app.get('/tickets', async (req, res) => {
+  try {
+    const token = req.headers['authorization'];
+    const response = await axios.get('https://api.hubapi.com/crm/v3/objects/tickets', {
+      params: {
+        limit: 10,
+        archived: false
+      },
+      headers: {
+        Authorization: token,
+        Accept: 'application/json'
+      }
+    });
+    res.json(response.data);
+  } catch (err) {
+    res.status(err.response?.status || 500).json({ error: err.message });
+  }
+});
+
+
+
+// GET ticket by ID
+app.get('/tickets/:id', async (req, res) => {
+  try {
+    const token = req.headers['authorization'];
+    const { id } = req.params;
+    const response = await axios.get(`https://api.hubapi.com/crm/v3/objects/tickets/${id}`, {
+      headers: {
+        Authorization: token,
+        Accept: 'application/json'
+      }
+    });
+    res.json(response.data);
+  } catch (err) {
+    res.status(err.response?.status || 500).json({ error: err.message });
+  }
+});
+
+
+// create ticket by ID
+app.post('/tickets', async (req, res) => {
+  try {
+    const token = req.headers.authorization;
+    const body = req.body;
+
+    const response = await axios.post(
+      'https://api.hubapi.com/crm/v3/objects/tickets',
+      body,
+      {
+        headers: {
+          Authorization: token,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    res.status(response.status).json(response.data);
+  } catch (err) {
+    res.status(err.response?.status || 500).json({ error: err.message });
+  }
+});
+
+
+//update ticket by ID
+app.patch('/tickets/:id', async (req, res) => {
+  try {
+    const token = req.headers.authorization;
+    const { id } = req.params;
+    const body = req.body;
+
+    const response = await axios.patch(
+      `https://api.hubapi.com/crm/v3/objects/tickets/${id}`,
+      body,
+      {
+        headers: {
+          Authorization: token,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    res.status(response.status).json(response.data);
+  } catch (err) {
+    res.status(err.response?.status || 500).json({ error: err.message });
+  }
+});
+
+
+//delete ticket by ID
+app.delete('/tickets/:id', async (req, res) => {
+  try {
+    const token = req.headers.authorization;
+    const { id } = req.params;
+
+    const response = await axios.delete(
+      `https://api.hubapi.com/crm/v3/objects/tickets/${id}`,
+      {
+        headers: {
+          Authorization: token
+        }
+      }
+    );
+
+    res.status(response.status).send();
+  } catch (err) {
+    res.status(err.response?.status || 500).json({ error: err.message });
+  }
+});
+
+
 
 // Start server
 const PORT = 3000;
