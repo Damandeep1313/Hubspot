@@ -10,9 +10,7 @@ const HUBSPOT_BASE_URL = 'https://api.hubapi.com/crm/v3/objects/contacts';
 function getAuthHeader(token) {
   return { Authorization: `Bearer ${token}` };
 }
-function formatToken(token) {
-  return token?.startsWith('Bearer ') ? token : `Bearer ${token}`;
-}
+
 
 // GET all contacts
 app.get('/contacts', async (req, res) => {
@@ -331,97 +329,141 @@ app.post('/deals/search', async (req, res) => {
 
 
 
-// ------------------ COMPANIES ------------------
 
+// GET all companies (limit 10, archived = false)
 app.get('/companies', async (req, res) => {
-  const authToken = formatToken(req.headers.authorization);
   try {
-    const response = await fetch('https://api.hubapi.com/crm/v3/objects/companies?limit=10&archived=false', {
-      method: 'GET',
-      headers: { Authorization: authToken }
-    });
-    const data = await response.json();
-    res.status(response.status).json(data);
-  } catch (err) {
-    res.status(500).json({ error: 'Internal Server Error', details: err.message });
-  }
-});
+    const token = req.headers.authorization;
+    const { limit = 10, archived = false } = req.query;
 
-app.get('/companies/:id', async (req, res) => {
-  const authToken = formatToken(req.headers.authorization);
-  const { id } = req.params;
-  try {
-    const response = await fetch(`https://api.hubapi.com/crm/v3/objects/companies/${id}`, {
-      method: 'GET',
-      headers: { Authorization: authToken }
-    });
-    const data = await response.json();
-    res.status(response.status).json(data);
-  } catch (err) {
-    res.status(500).json({ error: 'Internal Server Error', details: err.message });
-  }
-});
-
-app.post('/companies', async (req, res) => {
-  const authToken = formatToken(req.headers.authorization);
-  const body = req.body;
-  try {
-    const response = await fetch('https://api.hubapi.com/crm/v3/objects/companies', {
-      method: 'POST',
+    const response = await axios.get('https://api.hubapi.com/crm/v3/objects/companies', {
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: authToken
+        Authorization: token,
+        Accept: 'application/json'
       },
-      body: JSON.stringify(body)
+      params: { limit, archived }
     });
-    const data = await response.json();
-    res.status(response.status).json(data);
-  } catch (err) {
-    res.status(500).json({ error: 'Internal Server Error', details: err.message });
-  }
-});
 
-app.patch('/companies/:id', async (req, res) => {
-  const authToken = formatToken(req.headers.authorization);
-  const { id } = req.params;
-  const body = req.body;
-  try {
-    const response = await fetch(`https://api.hubapi.com/crm/v3/objects/companies/${id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: authToken
-      },
-      body: JSON.stringify(body)
-    });
-    const data = await response.json();
-    res.status(response.status).json(data);
-  } catch (err) {
-    res.status(500).json({ error: 'Internal Server Error', details: err.message });
-  }
-});
-
-app.delete('/companies/:id', async (req, res) => {
-  const token = formatToken(req.headers.authorization);
-  const { id } = req.params;
-  try {
-    const response = await axios.delete(`https://api.hubapi.com/crm/v3/objects/companies/${id}`, {
-      headers: { Authorization: token }
-    });
-    if (response.status === 204) {
-      res.status(204).send();
-    } else {
-      res.status(response.status).json(response.data);
-    }
+    res.status(200).json(response.data);
   } catch (err) {
     res.status(err.response?.status || 500).json({ error: err.message });
   }
 });
 
-app.post('/companies/search', async (req, res) => {
-  const token = formatToken(req.headers.authorization);
-  const body = req.body;
+
+
+
+// GET - Company by ID
+app.get('/companies/:id', async (req, res) => {
   try {
+    const token = req.headers.authorization;
+    const { id } = req.params;
+
+    const response = await axios.get(
+      `https://api.hubapi.com/crm/v3/objects/companies/${id}`,
+      {
+        headers: {
+          Authorization: token,
+          Accept: 'application/json'
+        }
+      }
+    );
+
+    res.status(200).json(response.data);
+  } catch (err) {
+    res.status(err.response?.status || 500).json({ error: err.message });
+  }
+});
+
+
+
+
+
+
+
+// POST - Create a new company
+app.post('/companies', async (req, res) => {
+  try {
+    const token = req.headers.authorization;
+    const body = req.body;
+
+    const response = await axios.post(
+      'https://api.hubapi.com/crm/v3/objects/companies',
+      body,
+      {
+        headers: {
+          Authorization: token,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    res.status(response.status).json(response.data);
+  } catch (err) {
+    res.status(err.response?.status || 500).json({ error: err.message });
+  }
+});
+
+
+
+
+
+// PATCH - Update Company by ID
+app.patch('/companies/:id', async (req, res) => {
+  try {
+    const token = req.headers.authorization;
+    const { id } = req.params;
+    const body = req.body;
+
+    const response = await axios.patch(
+      `https://api.hubapi.com/crm/v3/objects/companies/${id}`,
+      body,
+      {
+        headers: {
+          Authorization: token,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    res.status(response.status).json(response.data);
+  } catch (err) {
+    res.status(err.response?.status || 500).json({ error: err.message });
+  }
+});
+
+
+app.delete('/companies/:id', async (req, res) => {
+  try {
+    const token = req.headers.authorization;
+    const { id } = req.params;
+
+    const response = await axios.delete(
+      `https://api.hubapi.com/crm/v3/objects/companies/${id}`,
+      {
+        headers: {
+          Authorization: token
+        }
+      }
+    );
+
+    res.status(response.status).send(); // 204 No Content
+  } catch (err) {
+    res.status(err.response?.status || 500).json({ error: err.message });
+  }
+});
+
+
+
+
+
+// ---------------------------------Search companies by name ()--------------------
+
+app.post('/companies/search', async (req, res) => {
+  try {
+    const token = req.headers['authorization'];
+    const body = req.body;
+
     const response = await axios.post(
       'https://api.hubapi.com/crm/v3/objects/companies/search',
       body,
@@ -432,11 +474,18 @@ app.post('/companies/search', async (req, res) => {
         }
       }
     );
+
     res.status(response.status).json(response.data);
   } catch (err) {
     res.status(err.response?.status || 500).json({ error: err.message });
   }
 });
+
+
+
+
+
+
 
 //--------------------------------------TICKETTS ENDPOINTS FROM HERE ->>>>>>>>>>>>>>>>>>>
 
