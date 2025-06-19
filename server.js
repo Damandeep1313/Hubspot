@@ -438,47 +438,91 @@ app.post('/companies/search', async (req, res) => {
   }
 });
 
-// ------------------ TICKETS ------------------
+//--------------------------------------TICKETTS ENDPOINTS FROM HERE ->>>>>>>>>>>>>>>>>>>
+
+
+
+
+
+
+
+//const HUBSPOT_TICKET_URL = 'https://api.hubapi.com/crm/v3/objects/tickets';
+
+
 
 app.get('/tickets', async (req, res) => {
-  const token = formatToken(req.headers.authorization);
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized: Missing or invalid token' });
+  }
+
   try {
+    const { limit, archived } = req.query;
+
     const response = await axios.get('https://api.hubapi.com/crm/v3/objects/tickets', {
-      params: { limit: 10, archived: false },
       headers: {
-        Authorization: token,
+        Authorization: authHeader,
         Accept: 'application/json'
+      },
+      params: {
+        limit,
+        archived
       }
     });
-    res.json(response.data);
+
+    res.status(200).json(response.data);
   } catch (err) {
-    res.status(err.response?.status || 500).json({ error: err.message });
+    res.status(err.response?.status || 500).json({
+      error: err.response?.data || err.message
+    });
   }
 });
 
+//get ticket by ID
 app.get('/tickets/:id', async (req, res) => {
-  const token = formatToken(req.headers.authorization);
-  const { id } = req.params;
   try {
+    const token = req.headers['authorization'];
+    const { id } = req.params;
+    const { archived } = req.query;
+
+    if (!token || !token.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Missing or invalid Authorization header' });
+    }
+
     const response = await axios.get(`https://api.hubapi.com/crm/v3/objects/tickets/${id}`, {
       headers: {
         Authorization: token,
         Accept: 'application/json'
-      }
+      },
+      params: { archived }
     });
-    res.json(response.data);
+
+    res.status(response.status).json(response.data);
   } catch (err) {
-    res.status(err.response?.status || 500).json({ error: err.message });
+    res.status(err.response?.status || 500).json({
+      error: err.response?.data || err.message
+    });
   }
 });
 
+
+
+
+
+// create NEW ticket 
 app.post('/tickets', async (req, res) => {
-  const token = formatToken(req.headers.authorization);
-  const body = req.body;
   try {
+    const token = req.headers.authorization;
+    const body = req.body;
+
+    if (!token || !token.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Invalid token format' });
+    }
+
     const response = await axios.post(
       'https://api.hubapi.com/crm/v3/objects/tickets',
-      body,
+      { properties: body.properties }, // 👈 force correct format
       {
         headers: {
           Authorization: token,
@@ -486,20 +530,32 @@ app.post('/tickets', async (req, res) => {
         }
       }
     );
+
     res.status(response.status).json(response.data);
   } catch (err) {
-    res.status(err.response?.status || 500).json({ error: err.message });
+    console.error('HubSpot error:', err.response?.data || err.message);
+    res.status(err.response?.status || 500).json({
+      error: err.response?.data || err.message
+    });
   }
 });
 
+
+
+//update ticket by ID
 app.patch('/tickets/:id', async (req, res) => {
-  const token = formatToken(req.headers.authorization);
-  const { id } = req.params;
-  const body = req.body;
   try {
+    const token = req.headers.authorization;
+    const { id } = req.params;
+    const body = req.body;
+
+    if (!token || !token.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Invalid or missing token' });
+    }
+
     const response = await axios.patch(
       `https://api.hubapi.com/crm/v3/objects/tickets/${id}`,
-      body,
+      { properties: body.properties }, // 🔥 required by HubSpot
       {
         headers: {
           Authorization: token,
@@ -507,30 +563,51 @@ app.patch('/tickets/:id', async (req, res) => {
         }
       }
     );
+
     res.status(response.status).json(response.data);
   } catch (err) {
-    res.status(err.response?.status || 500).json({ error: err.message });
+    console.error('Update error:', err.response?.data || err.message);
+    res.status(err.response?.status || 500).json({
+      error: err.response?.data || err.message
+    });
   }
 });
 
+
+
+//delete ticket by ID
 app.delete('/tickets/:id', async (req, res) => {
-  const token = formatToken(req.headers.authorization);
-  const { id } = req.params;
   try {
+    const token = req.headers.authorization;
+    const { id } = req.params;
+
+    if (!token || !token.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Invalid or missing token' });
+    }
+
     const response = await axios.delete(
       `https://api.hubapi.com/crm/v3/objects/tickets/${id}`,
       {
-        headers: { Authorization: token }
+        headers: {
+          Authorization: token
+        }
       }
     );
-    res.status(response.status).send();
+
+    res.status(response.status).send(); // No body
   } catch (err) {
-    res.status(err.response?.status || 500).json({ error: err.message });
+    console.error('Delete error:', err.response?.data || err.message);
+    res.status(err.response?.status || 500).json({
+      error: err.response?.data || err.message
+    });
   }
 });
 
-// ------------------ START SERVER ------------------
 
+
+
+
+// Start server
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`✅ HubSpot Agent API running on http://localhost:${PORT}`);
