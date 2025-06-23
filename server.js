@@ -95,6 +95,43 @@ app.delete('/contacts/:id', async (req, res) => {
   }
 });
 
+app.get('/contacts', async (req, res) => {
+  try {
+    const token = req.headers['authorization'];
+    const response = await axios.post(
+      `${HUBSPOT_BASE_URL}/search`,
+      {
+        filterGroups: [
+          {
+            filters: [
+              {
+                propertyName: 'hs_lead_status',
+                operator: 'EQ',
+                value: 'OPEN'
+              }
+            ]
+          }
+        ],
+        properties: ['firstname', 'lastname', 'email', 'hs_lead_status'],
+        limit: 100
+      },
+      {
+        headers: {
+          ...getAuthHeader(token),
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    res.json(response.data);
+  } catch (err) {
+    res
+      .status(err.response?.status || 500)
+      .json({ error: err.message });
+  }
+});
+
+
 
                 //     ⚡⚡⚡⚡⚡⚡⚡⚡DEALS ENDPOINTS FROM HERE ->>>>>>>>>>>>>>>>>>>
 
