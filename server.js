@@ -98,11 +98,13 @@ app.delete('/contacts/:id', async (req, res) => {
 app.post('/contacts/search', async (req, res) => {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Missing or invalid Authorization header' });
+  if (!authHeader) {
+    return res.status(401).json({ error: 'Missing Authorization header' });
   }
 
-  const hubspotToken = authHeader.replace('Bearer ', '');
+  // Normalize the token: strip any existing "Bearer" prefix and re-add it cleanly
+  const rawToken = authHeader.replace(/^Bearer\s+/i, '').trim();
+  const hubspotToken = `Bearer ${rawToken}`;
   const body = req.body;
 
   try {
@@ -110,7 +112,7 @@ app.post('/contacts/search', async (req, res) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${hubspotToken}`
+        Authorization: hubspotToken
       },
       body: JSON.stringify(body)
     });
@@ -122,7 +124,6 @@ app.post('/contacts/search', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error', details: err.message });
   }
 });
-
 
 
 
