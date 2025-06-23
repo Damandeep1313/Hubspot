@@ -95,41 +95,34 @@ app.delete('/contacts/:id', async (req, res) => {
   }
 });
 
-app.get('/contacts', async (req, res) => {
-  try {
-    const token = req.headers['authorization'];
-    const response = await axios.post(
-      `${HUBSPOT_BASE_URL}/search`,
-      {
-        filterGroups: [
-          {
-            filters: [
-              {
-                propertyName: 'hs_lead_status',
-                operator: 'EQ',
-                value: 'OPEN'
-              }
-            ]
-          }
-        ],
-        properties: ['firstname', 'lastname', 'email', 'hs_lead_status'],
-        limit: 100
-      },
-      {
-        headers: {
-          ...getAuthHeader(token),
-          'Content-Type': 'application/json'
-        }
-      }
-    );
+app.post('/contacts/search', async (req, res) => {
+  const authHeader = req.headers.authorization;
 
-    res.json(response.data);
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Missing or invalid Authorization header' });
+  }
+
+  const hubspotToken = authHeader.replace('Bearer ', '');
+  const body = req.body;
+
+  try {
+    const response = await fetch('https://api.hubapi.com/crm/v3/objects/contacts/search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${hubspotToken}`
+      },
+      body: JSON.stringify(body)
+    });
+
+    const data = await response.json();
+    res.status(response.status).json(data);
   } catch (err) {
-    res
-      .status(err.response?.status || 500)
-      .json({ error: err.message });
+    console.error('Search contacts failed:', err.message);
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
   }
 });
+
 
 
 
